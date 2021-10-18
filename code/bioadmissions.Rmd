@@ -1,0 +1,119 @@
+---
+title: 'Grad admissions: IU Biology'
+author: "Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+header-includes: \usepackage{array}
+geometry: margin=2.54cm
+---
+
+# Objective
+Track trends in graduate admission starting in 2011 with particular emphasis on underrepresented minorities
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/bioadmissions/")
+
+# Require and/or install packages 
+package.list <- c('grid', 'png', 'tidyverse',"reshape2", "cowplot") 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+```
+
+
+# Load data
+
+```{r}
+# Load data set
+data <- read.delim("~/GitHub/bioadmissions/data/BioGradAdmisssions2.txt", 
+              sep = "", header = TRUE)
+
+# Create proportion underrepresented minority (urm) columns
+data2 <- data %>%
+ select(year, section, app.num, app.urm, inv.urm, inv.num, off.urm, off.num, 
+        acc.urm, acc.num) %>%
+ mutate(
+  app.per.urm = app.urm/app.num, # proportion urm applied
+  inv.per.urm = inv.urm/inv.num, # proportion urm invited
+  off.per.urm = off.urm/off.num, # proportion urm offered
+  acc.per.urm = acc.urm/acc.num  # proportion urm accepted
+)
+```
+
+# Trends in underrepresented minority students by numbers
+
+```{r fig1, fig.height = 9, fig.width = 5}
+
+# applications
+plot.app <- data2 %>%
+  # filter(section == "EEB")  %>%
+  pivot_longer(cols = c("app.num", "app.urm"), names_to = "type", values_to = "number")%>%
+  ggplot(data = ., aes(x = year, y = number, color = type)) + 
+  geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+  geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) +  ylim(0, 200) +
+  scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2, 0.75)) + 
+  theme(legend.title = element_blank()) +
+  facet_wrap(~section)
+
+# invitations
+plot.inv <- data2 %>%
+  # filter(section == "EEB")  %>%
+  pivot_longer(cols = c("inv.num", "inv.urm"), names_to = "type", values_to = "number")%>%
+  ggplot(data = ., aes(x = year, y = number, color = type)) + 
+  geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+  geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) + ylim(0, 70) +
+  scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2, 0.75))+
+  theme(legend.title = element_blank()) +
+  facet_wrap(~section)
+
+# offers
+plot.off <- data2 %>%
+  # filter(section == "EEB")  %>%
+  pivot_longer(cols = c("off.num", "off.urm"), names_to = "type", values_to = "number")%>%
+  ggplot(data = ., aes(x = year, y = number, color = type)) + 
+  geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+  geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) + ylim(0, 60) +
+  scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2, 0.75))+
+  theme(legend.title = element_blank()) +
+  facet_wrap(~section)
+
+# acceptances
+plot.acc <- data2 %>%
+  # filter(section == "EEB")  %>%
+  pivot_longer(cols = c("acc.num", "acc.urm"), names_to = "type", values_to = "number")%>%
+  ggplot(data = ., aes(x = year, y = number, color = type)) + 
+  geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+  geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) + ylim(0, 35) +
+  scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2, 0.75))+
+  theme(legend.title = element_blank()) +
+  facet_wrap(~section)
+
+plot_grid(plot.app, plot.inv, plot.off, plot.acc, labels = "AUTO", ncol = 1)
+```
+
+
+# Trends in underrepresented minority students by proportions
+
+```{r}
+plot.props <- data2 %>%
+  # filter(section == "EEB")  %>%
+  pivot_longer(cols = c("app.per.urm", "inv.per.urm", "off.per.urm", "acc.per.urm"), 
+      names_to = "type", values_to = "proportion") %>%
+  ggplot(data = ., aes(x = year, y = proportion, color = type)) + 
+  geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+  geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1,1,1)) +
+  scale_shape_manual(values=c(0,1,0,0)) + theme_classic() + theme(legend.position = c(0.1, 0.8))+
+  theme(legend.title = element_blank()) +
+  facet_wrap(~section)
+
+plot.props
+```

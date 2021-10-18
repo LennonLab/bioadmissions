@@ -1,0 +1,129 @@
+---
+title: 'Grad admissions: IU Biology'
+author: "Jay T. Lennon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+header-includes: \usepackage{array}
+geometry: margin=2.54cm
+---
+
+# Objective
+Track trends in graduate admission starting in 2011 with particular emphasis on underrepresented minorities
+
+# Set working environment and load packages 
+
+```{r setup, message = FALSE, warning = FALSE}
+# Clear and set working directory 
+rm(list = ls())
+setwd("~/GitHub/bioadmissions/")
+
+# Require and/or install packages 
+package.list <- c('grid', 'png', 'tidyverse',"reshape2", "cowplot") 
+for (package in package.list) {
+  if (!require(package, character.only=T, quietly=T)) { 
+    install.packages(package)
+    library(package, character.only=T)
+  } }
+```
+
+
+# Load data
+
+```{r}
+# Load data set
+data <- read.delim("~/GitHub/bioadmissions/data/BioGradAdmisssions2.txt", 
+              sep = "", header = TRUE)
+
+# Create proportion underrepresented minority (urm) columns
+data2 <- data %>%
+ select(year, section, app.num, app.urm, inv.urm, inv.num, off.urm, off.num, 
+        acc.urm, acc.num) %>%
+ mutate(
+  app.per.urm = app.urm/app.num, # proportion urm applied
+  inv.per.urm = inv.urm/inv.num, # proportion urm invited
+  off.per.urm = off.urm/off.num, # proportion urm offered
+  acc.per.urm = acc.urm/acc.num  # proportion urm accepted
+)
+```
+
+
+# Number of applications across sections in Biology
+
+```{r}
+# How has number of applicants changed over time across sections?
+# In EEB, number of applicants has declined by ~60%
+
+ggplot(data2, aes(x = year, y = app.num, color = section)) + 
+geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+geom_point(aes(shape = section), size = 2) + scale_linetype_manual(values = c(1,1,1)) +
+scale_shape_manual(values=c(0,1,2)) + theme_classic() + theme(legend.position = c(0.9,0.9)) 
+```
+
+
+# Trends in underrepresented minority students in EEB
+
+```{r}
+# numbers data for EEB
+data.num <- data2 %>%
+  select(year, section, app.num, app.urm, inv.urm, inv.num, off.urm, off.num, 
+        acc.urm, acc.num) %>%
+  filter(section == "EEB")
+
+# applicants
+data.num.app <- data.num %>% 
+  select(year, section, app.num, app.urm) %>%
+  melt(id = c("year", "section")) %>%
+  rename(c(number = value, type = variable))
+
+app.plot  <- ggplot(data.num.app, aes(x = year, y = number, color = type)) + 
+geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) +
+scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2,0.35))
+
+# invites
+data.num.inv <- data.num %>% 
+  select(year, section, inv.num, inv.urm) %>%
+  melt(id = c("year", "section")) %>%
+  rename(c(number = value, type = variable))
+
+inv.plot  <- ggplot(data.num.inv, aes(x = year, y = number, color = type)) + 
+geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) +
+scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2,0.35))
+
+# offers
+data.num.off <- data.num %>% 
+  select(year, section, off.num, off.urm) %>%
+  melt(id = c("year", "section")) %>%
+  rename(c(number = value, type = variable))
+
+off.plot  <- ggplot(data.num.off, aes(x = year, y = number, color = type)) + 
+geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) +
+scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2,0.35))
+
+# accepts
+data.num.acc <- data.num %>% 
+  select(year, section, acc.num, acc.urm) %>%
+  melt(id = c("year", "section")) %>%
+  rename(c(number = value, type = variable))
+
+acc.plot  <- ggplot(data.num.acc, aes(x = year, y = number, color = type)) + 
+geom_line(aes(linetype = "solid"), size = 0.75, show.legend = F) +
+geom_point(aes(shape = type), size = 2) + scale_linetype_manual(values = c(1,1)) +
+scale_shape_manual(values=c(0,1)) + theme_classic() + theme(legend.position = c(0.2,0.35))
+
+
+
+plot_grid(app.plot, inv.plot, off.plot, acc.plot, labels = "AUTO")
+
+
+
+# percent data
+# data.per <- data2 %>%
+#  select(year, section, app.per.urm, inv.per.urm, off.per.urm, acc.per.urm) %>%
+#  filter(section == "EEB")
+```
